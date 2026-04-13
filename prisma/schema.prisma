@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model Article { 
+  id    Int     @id @default(autoincrement()) 
+  title String
+  content String
+  summary String
+  userId Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  quizzes Quiz[]
+} 
+model Quiz { 
+  id        Int     @id @default(autoincrement()) 
+  question String
+  options String[]
+  answer String
+  articleId Int
+  article Article @relation(fields: [articleId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+} 
