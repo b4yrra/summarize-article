@@ -24,7 +24,7 @@ export default function Home() {
   const activeArticle = articles.find((a) => a.id === activeId) ?? null;
 
   useEffect(() => {
-    fetch("/api/articles?userId=1")
+    fetch("/api/articles")
       .then((r) => r.json())
       .then((data) => Array.isArray(data) && setArticles(data))
       .catch(() => {});
@@ -68,7 +68,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background font-mono">
       <Topbar />
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar

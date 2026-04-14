@@ -1,8 +1,8 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
-import { PrismaClient } from "@/app/generated/prisma";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 interface GeneratedQuiz {
@@ -18,20 +18,35 @@ interface GeneratedArticle {
   quizzes: GeneratedQuiz[];
 }
 
-// POST /api/generate
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { topic, userId } = body;
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!topic || !userId) {
+    const body = await req.json();
+    const { title, content } = body;
+
+    if (!title?.trim() || !content?.trim()) {
       return NextResponse.json(
-        { error: "topic and userId are required" },
+        { error: "Title and content are required" },
         { status: 400 },
       );
     }
 
-    // Use Groq's free llama-3.3-70b-versatile model
+    // Upsert user by Clerk ID
+    const clerkUser = await currentUser();
+    const email =
+      clerkUser?.emailAddresses?.[0]?.emailAddress ?? `${userId}@clerk.user`;
+
+    const user = await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: { email },
+      create: { clerkId: userId, email },
+    });
+
+    // Generate article + quizzes via Groq
     const message = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       max_tokens: 2048,
@@ -44,7 +59,7 @@ export async function POST(req: NextRequest) {
         },
         {
           role: "user",
-          content: `Generate an article and 5 multiple-choice quiz questions about the topic: "${topic}".
+          content: `Generate an article and 5 multiple-choice quiz questions about the topic: "${title}".
 
 Respond ONLY with a valid JSON object that matches this exact shape:
 {
@@ -82,7 +97,7 @@ Respond ONLY with a valid JSON object that matches this exact shape:
         title: parsed.title,
         content: parsed.content,
         summary: parsed.summary,
-        userId: Number(userId),
+        userId: user.id,
       },
     });
 
@@ -101,11 +116,9 @@ Respond ONLY with a valid JSON object that matches this exact shape:
     );
 
     return NextResponse.json({ article, quizzes }, { status: 201 });
-  } catch (error) {
-    console.error("[POST /api/generate]", error);
-    return NextResponse.json(
-      { error: "Failed to generate content" },
-      { status: 500 },
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/generate]", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -29,7 +29,7 @@ export function GenerateForm({ onCreated }: GenerateFormProps) {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ topic: title, userId: 1 }),
+        body: JSON.stringify({ title, content }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed");
