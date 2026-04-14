@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const email =
       clerkUser?.emailAddresses?.[0]?.emailAddress ?? `${userId}@clerk.user`;
 
-    const user = await prisma.user.upsert({
+    const user = await (prisma as any).user.upsert({
       where: { clerkId: userId },
       update: { email },
       create: { clerkId: userId, email },
