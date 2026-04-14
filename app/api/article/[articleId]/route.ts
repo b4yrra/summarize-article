@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { articleId: string } };
+type Params = { params: Promise<{ articleId: string }> };
 
 // GET /api/article/[articleId]
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
-    const id = Number(params.articleId);
+    const { articleId: articleIdStr } = await params;
+    const id = Number(articleIdStr);
 
     const article = await prisma.article.findUnique({
       where: { id },
@@ -30,7 +31,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // POST /api/article/[articleId]  – update article
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const id = Number(params.articleId);
+    const { articleId: articleIdStr } = await params;
+    const id = Number(articleIdStr);
     const body = await req.json();
     const { title, content, summary } = body;
 
@@ -61,7 +63,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 // DELETE /api/article/[articleId]
 export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
-    const id = Number(params.articleId);
+    const { articleId: articleIdStr } = await params;
+    const id = Number(articleIdStr);
 
     const existing = await prisma.article.findUnique({ where: { id } });
     if (!existing) {

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Params = { params: { articleId: string } };
+type Params = { params: Promise<{ articleId: string }> };
 
 // GET /api/article/[articleId]/quizzes
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
-    const articleId = Number(params.articleId);
+    const { articleId: articleIdStr } = await params;
+    const articleId = Number(articleIdStr);
 
     const article = await prisma.article.findUnique({
       where: { id: articleId },
@@ -33,7 +34,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // POST /api/article/[articleId]/quizzes  – create one or many quizzes
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const articleId = Number(params.articleId);
+    const { articleId: articleIdStr } = await params;
+    const articleId = Number(articleIdStr);
     const body = await req.json();
 
     const article = await prisma.article.findUnique({
