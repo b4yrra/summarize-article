@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(articles, { status: 200 });
   } catch (error) {
-    console.error("[GET /api/articles]", error);
+    console.error("[GET /api/articles]", error); // ← check your terminal for this
     return NextResponse.json(
       { error: "Failed to fetch articles" },
       { status: 500 },
